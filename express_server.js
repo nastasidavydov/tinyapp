@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 
+// generates string to be used as shortURL
 const generateRandomString = () => {
   const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
@@ -44,8 +45,10 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body.longURL);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  console.log(res.statusCode);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/hello", (req, res) => {
