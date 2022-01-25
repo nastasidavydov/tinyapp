@@ -1,8 +1,10 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080;
-const bodyParser = require("body-parser");
 
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 
@@ -55,11 +57,17 @@ app.get('/urls/:shortURL', (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
+app.post("/login", (req, res) => {
+  const user = req.body.username;
+
+  res.cookie('username', user).redirect("/urls");
+});
+
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.longURL;
   
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
