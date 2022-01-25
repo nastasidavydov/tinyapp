@@ -4,12 +4,20 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 
 app.use(bodyParser.urlencoded({extended: true}));
-
 app.set('view engine', 'ejs');
 
-function generateRandomString() {
+const generateRandomString = () => {
+  const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  let count = 0;
 
-}
+  while (count < 6) {
+    randomString += chars.charAt(Math.floor(Math.random() * chars.length));
+    count++;
+  }
+  return randomString;
+};
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
