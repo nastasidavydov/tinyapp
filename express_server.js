@@ -41,6 +41,16 @@ const checkEmailExistence = email => {
   return false;
 };
 
+const checkRegisteredUsers = (email, pswd) => {
+  const users = Object.keys(userDatabase);
+  for (let user of users) {
+    if (userDatabase[user].email === email && userDatabase[user].password === pswd) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 /*---------------- Databases ------------------ */
 const urlDatabase = {
@@ -134,15 +144,28 @@ app.post("/register", (req, res) => {
 });
 
 /*---------------- Login/Logout page routes ------------------ */
-app.post("/login", (req, res) => {
-  const user = req.body.username;
+app.get("/login", (req, res) => {
+  const user = findUserByID(req.cookies["user_id"]);
+  const templateVars = {
+    user,
+  };
+  res.render("login", templateVars);
+});
 
-  res.cookie("username", user).redirect("/urls");
+app.post("/login", (req, res) => {
+  const {email, password} = req.body;
+  if (!checkRegisteredUsers(email, password)) {
+    res.status(404).send('There is no user with this email or password')
+  } else {
+    console.log(req)
+    res.redirect("/urls");
+  }
+
 });
 
 app.post("/logout", (req, res) => {
-  console.log(userDatabase);
-  res.clearCookie("user_id").redirect("urls");
+  
+  res.redirect("login");
 });
 
 /*----------------  ------------------ */
