@@ -8,7 +8,7 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 
-// generates string to be used as shortURL
+// generates string to be used as shortURL and userID
 const generateRandomString = () => {
   const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
@@ -21,13 +21,26 @@ const generateRandomString = () => {
   return randomString;
 };
 
-
+/*---------------- Databases ------------------ */
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-// add routing
+const userDatabase = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  },
+};
+
+/*---------------- Routing ------------------ */
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -67,13 +80,28 @@ app.get('/urls/:shortURL', (req, res) => {
   }
 });
 
+/*---------------- Registration page routes ------------------ */
 app.get("/register", (req, res) => {
   const templateVars = {
     username: req.cookies["username"],
   };
   res.render("register", templateVars);
-})
+});
 
+app.post("/register", (req, res) => {
+  const userID = generateRandomString();
+  
+  const {email, password} = req.body;
+  userDatabase[userID] = {
+    id: userID,
+    email,
+    password
+  }
+
+  res.cookie("user_id", userID).redirect("/urls");
+});
+
+/*---------------- Login/Logout page routes ------------------ */
 app.post("/login", (req, res) => {
   const user = req.body.username;
 
@@ -84,6 +112,7 @@ app.post("/logout", (req, res) => {
   res.clearCookie("username").redirect("urls");
 });
 
+/*----------------  ------------------ */
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.longURL;
