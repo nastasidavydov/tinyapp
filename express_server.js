@@ -21,6 +21,15 @@ const generateRandomString = () => {
   return randomString;
 };
 
+const findUserByID = userID => {
+  const users = Object.keys(userDatabase);
+  for (let user of users) {
+    if (userID === user) {
+      return userDatabase[user];
+    }
+  }
+}
+
 /*---------------- Databases ------------------ */
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -46,9 +55,10 @@ app.get("/", (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
+  const user = findUserByID(req.cookies["user_id"]);
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user,
   };
   res.render('urls_index', templateVars);
 });
@@ -61,20 +71,22 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  const user = findUserByID(req.cookies["user_id"]);
   const templateVars = {
-    username: req.cookies["username"],
+    user,
   };
   res.render("urls_new", templateVars);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
+  const user = findUserByID(req.cookies["user_id"]);
   if (!urlDatabase[req.params.shortURL]) {
     res.sendStatus(418); // should be 404 :)
   } else {
     const templateVars = { 
       shortURL: req.params.shortURL, 
       longURL: urlDatabase[req.params.shortURL],
-      username: req.cookies["username"]
+      user,
     };
     res.render("urls_show", templateVars);
   }
@@ -82,8 +94,9 @@ app.get('/urls/:shortURL', (req, res) => {
 
 /*---------------- Registration page routes ------------------ */
 app.get("/register", (req, res) => {
+  const user = findUserByID(req.cookies["user_id"]);
   const templateVars = {
-    username: req.cookies["username"],
+    user,
   };
   res.render("register", templateVars);
 });
