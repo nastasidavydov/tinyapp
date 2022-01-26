@@ -8,6 +8,7 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'ejs');
 
+/*---------------- Helper Functions ------------------ */
 // generates string to be used as shortURL and userID
 const generateRandomString = () => {
   const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -28,7 +29,18 @@ const findUserByID = userID => {
       return userDatabase[user];
     }
   }
-}
+};
+
+const checkEmailExistence = email => {
+  const users = Object.keys(userDatabase);
+  for (let user of users) {
+    if (userDatabase[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
+
 
 /*---------------- Databases ------------------ */
 const urlDatabase = {
@@ -92,6 +104,7 @@ app.get('/urls/:shortURL', (req, res) => {
   }
 });
 
+
 /*---------------- Registration page routes ------------------ */
 app.get("/register", (req, res) => {
   const user = findUserByID(req.cookies["user_id"]);
@@ -103,15 +116,21 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
-  
   const {email, password} = req.body;
-  userDatabase[userID] = {
-    id: userID,
-    email,
-    password
+  
+  if (!email.length || !password.length) {
+    res.status(404).send('Enter your email AND password to register');
+  } else if (checkEmailExistence(email)) {
+    res.status(404).send('User with such e-mail is already registered');
+  } else {
+    userDatabase[userID] = {
+      id: userID,
+      email,
+      password
+    }
+  
+    res.cookie("user_id", userID).redirect("/urls");
   }
-
-  res.cookie("user_id", userID).redirect("/urls");
 });
 
 /*---------------- Login/Logout page routes ------------------ */
@@ -122,7 +141,8 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username").redirect("urls");
+  console.log(userDatabase);
+  res.clearCookie("user_id").redirect("urls");
 });
 
 /*----------------  ------------------ */
