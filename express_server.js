@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const { send } = require("express/lib/response");
 const app = express();
 const PORT = 8080;
 
@@ -41,15 +42,14 @@ const checkEmailExistence = email => {
   return false;
 };
 
-const checkRegisteredUsers = (email, pswd) => {
+const findUserByEmail = email => {
   const users = Object.keys(userDatabase);
   for (let user of users) {
-    if (userDatabase[user].email === email && userDatabase[user].password === pswd) {
-      return true;
+    if (userDatabase[user].email === email) {
+      return userDatabase[user].id;
     }
   }
-  return false;
-}
+};
 
 
 /*---------------- Databases ------------------ */
@@ -127,7 +127,7 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const {email, password} = req.body;
-  
+ 
   if (!email.length || !password.length) {
     res.status(404).send('Enter your email AND password to register');
   } else if (checkEmailExistence(email)) {
@@ -154,18 +154,21 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
-  if (!checkRegisteredUsers(email, password)) {
-    res.status(404).send('There is no user with this email or password')
+  const user = findUserByEmail(email);
+  
+  if (!checkEmailExistence(email)) {
+    res.status(403).send('There is no user with this email');
+  } else if (userDatabase[user].password !== password) {
+    res.status(403).send('Password you entered is incorrect');
   } else {
-    console.log(req)
-    res.redirect("/urls");
+    res.cookie("user_id", user).redirect("/urls");
   }
-
+  
 });
 
 app.post("/logout", (req, res) => {
   
-  res.redirect("login");
+  res.clearCookie("user_id").redirect("/login");
 });
 
 /*----------------  ------------------ */
