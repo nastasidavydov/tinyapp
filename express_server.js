@@ -1,21 +1,14 @@
 const express = require("express");
-const cookieSession = require("cookie-session");
-const bodyParser = require("body-parser");
-const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080;
 
-const generateRandomString = () => {
-  const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let randomString = '';
-  let count = 0;
+const cookieSession = require("cookie-session");
+const bodyParser = require("body-parser");
+const bcrypt = require('bcryptjs');
 
-  while (count < 6) {
-    randomString += chars.charAt(Math.floor(Math.random() * chars.length));
-    count++;
-  }
-  return randomString;
-};
+const { generateRandomString, findUserByEmail, checkEmailExistence, urlsForUser } = require('./helpers')
+
+
 
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -27,49 +20,10 @@ app.use(cookieSession({
 
 app.set('view engine', 'ejs');
 
-/*---------------- Helper Functions ------------------ */
-// generates string to be used as shortURL and userID
 
 
-const findUserByID = (userID) => {
-  const users = Object.keys(userDatabase);
-  for (let user of users) {
-    if (userID === user) {
-      return userDatabase[user];
-    }
-  }
-};
 
-const checkEmailExistence = email => {
-  const users = Object.keys(userDatabase);
-  for (let user of users) {
-    if (userDatabase[user].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
 
-const findUserByEmail = email => {
-  const users = Object.keys(userDatabase);
-  for (let user of users) {
-    if (userDatabase[user].email === email) {
-      return userDatabase[user].id;
-    }
-  }
-};
-
-const urlsForUser = id => {
-  const userURLs = {};
-  const shortURLs = Object.keys(urlDatabase);
-
-  for (let shortURL of shortURLs) {
-    if (urlDatabase[shortURL].userID === id) {
-      userURLs[shortURL] = urlDatabase[shortURL].longURL;
-    }
-  }
-  return userURLs;
-};
 
 
 /*---------------- Databases ------------------ */
@@ -105,19 +59,19 @@ app.get("/", (req, res) => {
 /*---------------- List of Urls page routes ------------------ */
 app.get('/urls', (req, res) => {
   const userID = req.session["user_id"]
-  const user = findUserByID(userID);
-  const userURLs = urlsForUser(userID);
-  // shows current user urls
+  const userURLs = urlsForUser(userID, urlDatabase);
+  
   const templateVars = { 
     urls: userURLs,
-    user,
+    user: userDatabase[userID],
   };
   res.render('urls_index', templateVars);
 });
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  const user = findUserByID(req.session["user_id"])
+  const userID = req.session["user_id"]
+  const user = userDatabase[userID];
   
   /* redirects not logged in users trying to create shURL */
   if (!user) {
@@ -125,9 +79,9 @@ app.post("/urls", (req, res) => {
   } else {
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
-      userID: req.session["user_id"],
+      userID,
     };
-
+    
     res.redirect(`/urls/${shortURL}`);
   }
 });
@@ -135,25 +89,26 @@ app.post("/urls", (req, res) => {
 /*--------------Create new shortURL page routes ------------------ */
 
 app.get("/urls/new", (req, res) => {
-  const user = findUserByID(req.session["user_id"]);
+  const userID = req.session["user_id"];
   const templateVars = {
-    user,
+    user: userDatabase[userID],
   };
+
   res.render("urls_new", templateVars);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  const user = findUserByID(req.session["user_id"]);
+  const userID = req.session["user_id"];;
   const {shortURL} = req.params;
-
+  
   if (!urlDatabase[shortURL]) {
     res.sendStatus(418); // should be 404 :)
   } else {
     const {longURL} = urlDatabase[shortURL];
     const templateVars = { 
-      longURL: longURL,
+      longURL,
       shortURL, 
-      user,
+      user: userDatabase[userID],
     };
     res.render("urls_show", templateVars);
   }
@@ -162,9 +117,9 @@ app.get('/urls/:shortURL', (req, res) => {
 
 /*---------------- Registration page routes ------------------ */
 app.get("/register", (req, res) => {
-  const user = findUserByID(req.session["user_id"]);
+  const userID = req.session["user_id"];
   const templateVars = {
-    user,
+    user: userDatabase[userID],
   };
   res.render("register", templateVars);
 });
@@ -177,7 +132,7 @@ app.post("/register", (req, res) => {
 
   if (!email.length || !password.length) {
     res.status(404).send('Enter your email AND password to register');
-  } else if (checkEmailExistence(email)) {
+  } else if (checkEmailExistence(email, userDatabase)) {
     res.status(404).send('User with such e-mail is already registered');
   } else {
     
@@ -193,26 +148,26 @@ app.post("/register", (req, res) => {
 
 /*---------------- Login/Logout page routes ------------------ */
 app.get("/login", (req, res) => {
-  const user = findUserByID(req.session["user_id"]);
+  const userID = req.session["user_id"];
   
   const templateVars = {
-    user,
+    user: userDatabase[userID],
   };
   res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, userDatabase);
   
-  if (!checkEmailExistence(email)) {
+  if (!checkEmailExistence(email, userDatabase)) {
     res.status(403).send('There is no user with this email');
 
-  } else if (!bcrypt.compareSync(password, userDatabase[user].password)) {
+  } else if (!bcrypt.compareSync(password, userDatabase[user.id].password)) {
     res.status(403).send('Password you entered is incorrect');
 
   } else {
-    req.session["user_id"] = user;
+    req.session["user_id"] = user.id;
     res.redirect("/urls");
   }
   
@@ -227,7 +182,7 @@ app.post("/logout", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const userID = req.session["user_id"]
-  const userURLs = Object.keys(urlsForUser(userID));
+  const userURLs = Object.keys(urlsForUser(userID, urlDatabase));
   const shortURL = req.params.id;
   
   if (!userURLs.includes(shortURL)) {
@@ -243,7 +198,7 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session["user_id"]
-  const userURLs = Object.keys(urlsForUser(userID));
+  const userURLs = Object.keys(urlsForUser(userID, urlDatabase));
   const {shortURL} = req.params;
   
   if (!userURLs.includes(shortURL)) {
