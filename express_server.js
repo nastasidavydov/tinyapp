@@ -54,8 +54,6 @@ const findUserByEmail = email => {
 
 /*---------------- Databases ------------------ */
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "aJ48lW"
@@ -63,7 +61,7 @@ const urlDatabase = {
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "aJ48lW"
-}
+},
 };
 
 const userDatabase = { 
@@ -95,8 +93,11 @@ app.get('/urls', (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
   const user = findUserByID(req.cookies["user_id"])
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"],
+  };
   /* redirects not logged in users trying to create shURL */
   if (!user) {
     res.redirect('/login');
@@ -115,12 +116,14 @@ app.get("/urls/new", (req, res) => {
 
 app.get('/urls/:shortURL', (req, res) => {
   const user = findUserByID(req.cookies["user_id"]);
-  if (!urlDatabase[req.params.shortURL]) {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+
+  if (!longURL) {
     res.sendStatus(418); // should be 404 :)
   } else {
     const templateVars = { 
       shortURL: req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL],
+      longURL: longURL,
       user,
     };
     res.render("urls_show", templateVars);
@@ -187,7 +190,11 @@ app.post("/logout", (req, res) => {
 /*----------------  ------------------ */
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
-  urlDatabase[shortURL] = req.body.longURL;
+  
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"],
+  };
   
   res.redirect("/urls");
 });
@@ -200,7 +207,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
