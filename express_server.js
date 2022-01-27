@@ -7,7 +7,8 @@ const bodyParser = require("body-parser");
 const bcrypt = require('bcryptjs');
 
 const { userDatabase, urlDatabase } = require("./database");
-const { generateRandomString, findUserByEmail, checkEmailExistence, urlsForUser } = require('./helpers')
+const { generateRandomString, findUserByEmail, checkEmailExistence, urlsForUser } = require('./helpers');
+const { redirect } = require("express/lib/response");
 
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -22,9 +23,18 @@ app.set('view engine', 'ejs');
 
 
 
-/*---------------- Routing ------------------ */
+/*----------------------- Routing ------------------------- */
+/*-------------------------------------------------------- */
+
+//redirects to login page not logged in users
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userID = req.session["user_id"];
+  
+  if (!userID) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 /*---------------- List of Urls page routes ------------------ */
@@ -102,9 +112,9 @@ app.post("/register", (req, res) => {
   
 
   if (!email.length || !password.length) {
-    res.status(404).send('Enter your email AND password to register');
+    res.status(404).send(`${res.statusCode} - Enter your email AND password to register`);
   } else if (checkEmailExistence(email, userDatabase)) {
-    res.status(404).send('User with such e-mail is already registered');
+    res.status(404).send(`${res.statusCode} - User with such e-mail is already registered`);
   } else {
     
     userDatabase[userID] = {
@@ -120,10 +130,10 @@ app.post("/register", (req, res) => {
 /*---------------- Login/Logout page routes ------------------ */
 app.get("/login", (req, res) => {
   const userID = req.session["user_id"];
-  
   const templateVars = {
     user: userDatabase[userID],
   };
+
   res.render("login", templateVars);
 });
 
@@ -132,10 +142,10 @@ app.post("/login", (req, res) => {
   const user = findUserByEmail(email, userDatabase);
   
   if (!checkEmailExistence(email, userDatabase)) {
-    res.status(403).send('There is no user with this email');
+    res.status(403).send(`${res.statusCode} - There is no user with this email`);
 
   } else if (!bcrypt.compareSync(password, userDatabase[user.id].password)) {
-    res.status(403).send('Password you entered is incorrect');
+    res.status(403).send(`${res.statusCode} - Password you entered is incorrect`);
 
   } else {
     req.session["user_id"] = user.id;
@@ -143,6 +153,7 @@ app.post("/login", (req, res) => {
   }
   
 });
+/* clears user's cookie and redirects to login page */
 
 app.post("/logout", (req, res) => {
   req.session["user_id"] = null;
@@ -157,7 +168,7 @@ app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   
   if (!userURLs.includes(shortURL)) {
-    res.send(401).send('You don\'t have permission to manipulate this data');
+    res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
   } else {
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
@@ -173,7 +184,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const {shortURL} = req.params;
   
   if (!userURLs.includes(shortURL)) {
-    res.send(401).send('You don\'t have permission to manipulate this data');
+    res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
   } else {
     delete urlDatabase[shortURL];
     res.redirect('/urls');
@@ -187,11 +198,9 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
-// setting up a server
+/*------------ Server setup ----------------- */
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
