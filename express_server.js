@@ -51,12 +51,24 @@ const findUserByEmail = email => {
   }
 };
 
+const urlsForUser = id => {
+  const userURLs = {};
+  const shortURLs = Object.keys(urlDatabase);
+
+  for (let shortURL of shortURLs) {
+    if (urlDatabase[shortURL].userID === id) {
+      userURLs[shortURL] = urlDatabase[shortURL].longURL;
+    }
+  }
+  return userURLs;
+};
+
 
 /*---------------- Databases ------------------ */
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
-    userID: "aJ48lW"
+    userID: "ak48lW"
 },
   i3BoGr: {
     longURL: "https://www.google.ca",
@@ -65,8 +77,8 @@ const urlDatabase = {
 };
 
 const userDatabase = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "ak48lW": {
+    id: "ak48lW", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
   },
@@ -82,10 +94,14 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+/*---------------- List of Urls page routes ------------------ */
 app.get('/urls', (req, res) => {
-  const user = findUserByID(req.cookies["user_id"]);
+  const userID = req.cookies["user_id"]
+  const user = findUserByID(userID);
+  const userURLs = urlsForUser(userID);
+  
   const templateVars = { 
-    urls: urlDatabase,
+    urls: userURLs,
     user,
   };
   res.render('urls_index', templateVars);
@@ -94,14 +110,16 @@ app.get('/urls', (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const user = findUserByID(req.cookies["user_id"])
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.cookies["user_id"],
-  };
+  
   /* redirects not logged in users trying to create shURL */
   if (!user) {
     res.redirect('/login');
   } else {
+    urlDatabase[shortURL] = {
+      longURL: req.body.longURL,
+      userID: req.cookies["user_id"],
+    };
+
     res.redirect(`/urls/${shortURL}`);
   }
 });

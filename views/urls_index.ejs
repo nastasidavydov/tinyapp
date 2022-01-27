@@ -10,6 +10,13 @@
   <header>
     <%- include('partials/_header'); %>
   </header>
+  <% if (!user) { %>
+    <div class="alert alert-dark alert-dismissible fade show">
+      <i class="bi-exclamation-triangle-fill"></i>
+      <p>You don't have permission to see URLs. Please <a href="login" class="alert-link">login</a> or <a href="/register" class="alert-link">register</a></p>
+      
+  </div>
+  <% } else { %>
   <main style="margin: 1em;">
     <h3>My URLs</h3>
     <table class="table">
@@ -25,7 +32,7 @@
         <% for(let url in urls) { %>
           <tr>
             <td><a href="/u/<%= url %>" target=”_blank”><%= url %></a></td>
-            <td><%= urls[url].longURL %></td>
+            <td><%= urls[url]%></td>
             <td>
               <a href="/urls/<%= url %>">
                 <button class="btn btn-outline-primary">Edit</button>
@@ -40,6 +47,7 @@
         <% } %>
       </tbody>
     </table>
+    <% } %>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
