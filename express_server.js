@@ -56,6 +56,14 @@ const findUserByEmail = email => {
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+},
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+}
 };
 
 const userDatabase = { 
@@ -88,8 +96,13 @@ app.get('/urls', (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
-  
-  res.redirect(`/urls/${shortURL}`);
+  const user = findUserByID(req.cookies["user_id"])
+  /* redirects not logged in users trying to create shURL */
+  if (!user) {
+    res.redirect('/login');
+  } else {
+    res.redirect(`/urls/${shortURL}`);
+  }
 });
 
 app.get("/urls/new", (req, res) => {
