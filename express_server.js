@@ -1,7 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const { send } = require("express/lib/response");
 const app = express();
 const PORT = 8080;
 
@@ -99,7 +98,7 @@ app.get('/urls', (req, res) => {
   const userID = req.cookies["user_id"]
   const user = findUserByID(userID);
   const userURLs = urlsForUser(userID);
-  
+  // shows current user urls
   const templateVars = { 
     urls: userURLs,
     user,
@@ -124,6 +123,8 @@ app.post("/urls", (req, res) => {
   }
 });
 
+/*--------------Create new shortURL page routes ------------------ */
+
 app.get("/urls/new", (req, res) => {
   const user = findUserByID(req.cookies["user_id"]);
   const templateVars = {
@@ -134,14 +135,15 @@ app.get("/urls/new", (req, res) => {
 
 app.get('/urls/:shortURL', (req, res) => {
   const user = findUserByID(req.cookies["user_id"]);
-  const longURL = urlDatabase[req.params.shortURL].longURL;
+  const {shortURL} = req.params;
 
-  if (!longURL) {
+  if (!urlDatabase[shortURL]) {
     res.sendStatus(418); // should be 404 :)
   } else {
+    const {longURL} = urlDatabase[shortURL];
     const templateVars = { 
-      shortURL: req.params.shortURL, 
       longURL: longURL,
+      shortURL, 
       user,
     };
     res.render("urls_show", templateVars);
@@ -205,24 +207,38 @@ app.post("/logout", (req, res) => {
   res.clearCookie("user_id").redirect("/login");
 });
 
-/*----------------  ------------------ */
+/*---------------Edit/Delete existing URL routes ----------------- */
+
 app.post("/urls/:id", (req, res) => {
+  const userID = req.cookies["user_id"]
+  const userURLs = Object.keys(urlsForUser(userID));
   const shortURL = req.params.id;
   
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.cookies["user_id"],
-  };
-  
-  res.redirect("/urls");
+  if (!userURLs.includes(shortURL)) {
+    res.send(401).send('You don\'t have permission to manipulate this data');
+  } else {
+    urlDatabase[shortURL] = {
+      longURL: req.body.longURL,
+      userID: req.cookies["user_id"],
+    };
+    res.redirect('/urls');
+  }
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
+  const userID = req.cookies["user_id"]
+  const userURLs = Object.keys(urlsForUser(userID));
+  const {shortURL} = req.params;
   
-  res.redirect('/urls');
+  if (!userURLs.includes(shortURL)) {
+    res.send(401).send('You don\'t have permission to manipulate this data');
+  } else {
+    delete urlDatabase[shortURL];
+    res.redirect('/urls');
+  }
 });
+
+/*------------ Redirects to long url by clicking on short ----------------- */
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
