@@ -38,6 +38,7 @@ app.get("/", (req, res) => {
 });
 
 /*---------------- List of Urls page routes ------------------ */
+
 app.get('/urls', (req, res) => {
   const userID = req.session["user_id"]
   const userURLs = urlsForUser(userID, urlDatabase);
@@ -49,12 +50,13 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
+// add new url to database if user is logged in 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const userID = req.session["user_id"]
   const user = userDatabase[userID];
   
-  /* redirects not logged in users trying to create shURL */
+// redirects not logged in users trying to create shURL
   if (!user) {
     res.redirect('/login');
   } else {
@@ -69,13 +71,19 @@ app.post("/urls", (req, res) => {
 
 /*--------------Create new shortURL page routes ------------------ */
 
+// redirects to login page if user not logged in
 app.get("/urls/new", (req, res) => {
   const userID = req.session["user_id"];
-  const templateVars = {
-    user: userDatabase[userID],
-  };
 
-  res.render("urls_new", templateVars);
+  if (!userID) {
+    res.redirect("/login")
+  } else {
+    const templateVars = {
+      user: userDatabase[userID],
+    };
+  
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get('/urls/:shortURL', (req, res) => {
