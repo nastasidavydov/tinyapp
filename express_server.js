@@ -23,7 +23,7 @@ const generateRandomString = () => {
   return randomString;
 };
 
-const findUserByID = userID => {
+const findUserByID = (userID) => {
   const users = Object.keys(userDatabase);
   for (let user of users) {
     if (userID === user) {
@@ -165,7 +165,7 @@ app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const {email, password} = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
-  
+
   if (!email.length || !password.length) {
     res.status(404).send('Enter your email AND password to register');
   } else if (checkEmailExistence(email)) {
@@ -177,7 +177,7 @@ app.post("/register", (req, res) => {
       email,
       hashedPassword,
     }
-
+    
     res.cookie("user_id", userID).redirect("/urls");
   }
 });
@@ -185,6 +185,7 @@ app.post("/register", (req, res) => {
 /*---------------- Login/Logout page routes ------------------ */
 app.get("/login", (req, res) => {
   const user = findUserByID(req.cookies["user_id"]);
+  
   const templateVars = {
     user,
   };
@@ -197,8 +198,10 @@ app.post("/login", (req, res) => {
   
   if (!checkEmailExistence(email)) {
     res.status(403).send('There is no user with this email');
-  } else if (userDatabase[user].password !== password) {
+
+  } else if (!bcrypt.compareSync(password, userDatabase[user].password)) {
     res.status(403).send('Password you entered is incorrect');
+
   } else {
     res.cookie("user_id", user).redirect("/urls");
   }
