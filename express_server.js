@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
   }
 });
 
-/*---------------- List of Urls page routes ------------------ */
+/*---------------- List of Urls Page routes ------------------ */
 
 app.get('/urls', (req, res) => {
   const userID = req.session["user_id"]
@@ -69,7 +69,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
-/*--------------Create new shortURL page routes ------------------ */
+/*--------------Create new shortURL Page routes ------------------ */
 
 // redirects to login page if user not logged in
 app.get("/urls/new", (req, res) => {
@@ -86,12 +86,22 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+/*--------------Edit existing URL Page route ------------------ */
+
 app.get('/urls/:shortURL', (req, res) => {
-  const userID = req.session["user_id"];;
+  const userID = req.session["user_id"];
+  const userURLs = urlsForUser(userID, urlDatabase);
   const {shortURL} = req.params;
-  
+
   if (!urlDatabase[shortURL]) {
-    res.sendStatus(418); // should be 404 :)
+    res.status(404).send(`${res.statusCode} - This page doesn\'t exist \n`);
+  
+  } else if (!userID) {
+    res.status(401).send(`${res.statusCode} - Please log in to see this page \n`);
+
+  } else if (!userURLs[shortURL]) {
+    res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
+
   } else {
     const {longURL} = urlDatabase[shortURL];
     const templateVars = { 
@@ -172,10 +182,10 @@ app.post("/logout", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const userID = req.session["user_id"]
-  const userURLs = Object.keys(urlsForUser(userID, urlDatabase));
+  const userURLs = urlsForUser(userID, urlDatabase);
   const shortURL = req.params.id;
   
-  if (!userURLs.includes(shortURL)) {
+  if (!userURLs[shortURL]) {
     res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
   } else {
     urlDatabase[shortURL] = {
@@ -188,10 +198,10 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session["user_id"]
-  const userURLs = Object.keys(urlsForUser(userID, urlDatabase));
+  const userURLs = urlsForUser(userID, urlDatabase);
   const {shortURL} = req.params;
   
-  if (!userURLs.includes(shortURL)) {
+  if (!userURLs[shortURL]) {
     res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
   } else {
     delete urlDatabase[shortURL];
