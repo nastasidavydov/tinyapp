@@ -6,10 +6,12 @@ const cookieSession = require("cookie-session");
 const bodyParser = require("body-parser");
 const bcrypt = require('bcryptjs');
 
+app.set('view engine', 'ejs');
+
 const { userDatabase, urlDatabase } = require("./database");
 const { generateRandomString, findUserByEmail, checkEmailExistence, urlsForUser } = require('./helpers');
-const { redirect } = require("express/lib/response");
 
+// set middleware
 
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -19,14 +21,16 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000,
 }));
 
-app.set('view engine', 'ejs');
 
 
 
 /*----------------------- Routing ------------------------- */
 /*-------------------------------------------------------- */
 
-//redirects to login page not logged in users
+
+/*------------------- Home Page route --------------------- */
+
+//redirects to login page not logged in users, otherwise to list of urls
 app.get("/", (req, res) => {
   const userID = req.session["user_id"];
   
@@ -88,6 +92,7 @@ app.get("/urls/new", (req, res) => {
 
 /*--------------Edit existing URL Page route ------------------ */
 
+// if user is logged in and owns valid url - shows page, otherwise throws error
 app.get('/urls/:shortURL', (req, res) => {
   const userID = req.session["user_id"];
   const userURLs = urlsForUser(userID, urlDatabase);
@@ -114,7 +119,8 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 
-/*---------------- Registration page routes ------------------ */
+/*---------------------- Registration page routes ---------------------- */
+
 app.get("/register", (req, res) => {
   const userID = req.session["user_id"];
   const templateVars = {
@@ -123,6 +129,7 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
+// make possible to register if both input fields not empty, and there is no user with such email
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const {email, password} = req.body;
@@ -145,7 +152,8 @@ app.post("/register", (req, res) => {
   }
 });
 
-/*---------------- Login/Logout page routes ------------------ */
+/*------------------ Login/Logout page routes ------------------ */
+
 app.get("/login", (req, res) => {
   const userID = req.session["user_id"];
   const templateVars = {
@@ -155,6 +163,7 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
+// makes possible to login if passwords and emails mathch w/database
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
   const user = findUserByEmail(email, userDatabase);
@@ -171,8 +180,8 @@ app.post("/login", (req, res) => {
   }
   
 });
-/* clears user's cookie and redirects to login page */
 
+/* clears user's cookie and redirects to login page */
 app.post("/logout", (req, res) => {
   req.session["user_id"] = null;
   res.redirect("/login");
@@ -180,6 +189,7 @@ app.post("/logout", (req, res) => {
 
 /*---------------Edit/Delete existing URL routes ----------------- */
 
+// make possible to edit user's own url 
 app.post("/urls/:id", (req, res) => {
   const userID = req.session["user_id"]
   const userURLs = urlsForUser(userID, urlDatabase);
@@ -196,6 +206,7 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
+// make possible to delete user's own url 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session["user_id"]
   const userURLs = urlsForUser(userID, urlDatabase);
@@ -217,7 +228,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 
-/*------------ Server setup ----------------- */
+/*-------------------------- Server setup ------------------------------ */
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
