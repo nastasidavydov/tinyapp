@@ -5,22 +5,23 @@ const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "ak48lW"
-},
+  },
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "aJ48lW"
-},
+  },
 };
 
-const userDatabase = { 
+// testing purposes
+const userDatabase = {
   "ak48lW": {
-    id: "ak48lW", 
-    email: "user@example.com", 
-    password: bcrypt.hashSync("purple-monkey-dinosaur", 10) // testing purposes
+    id: "ak48lW",
+    email: "user@example.com",
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: bcrypt.hashSync("dishwasher-funk", 10)
   },
 };

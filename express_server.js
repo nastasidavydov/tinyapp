@@ -44,23 +44,23 @@ app.get("/", (req, res) => {
 /*---------------- List of Urls Page routes ------------------ */
 
 app.get('/urls', (req, res) => {
-  const userID = req.session["user_id"]
+  const userID = req.session["user_id"];
   const userURLs = urlsForUser(userID, urlDatabase);
   
-  const templateVars = { 
+  const templateVars = {
     urls: userURLs,
     user: userDatabase[userID],
   };
   res.render('urls_index', templateVars);
 });
 
-// add new url to database if user is logged in 
+// add new url to database if user is logged in
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  const userID = req.session["user_id"]
+  const userID = req.session["user_id"];
   const user = userDatabase[userID];
   
-// redirects not logged in users trying to create shURL
+  // redirects not logged in users trying to create shURL
   if (!user) {
     res.redirect('/login');
   } else {
@@ -80,7 +80,7 @@ app.get("/urls/new", (req, res) => {
   const userID = req.session["user_id"];
 
   if (!userID) {
-    res.redirect("/login")
+    res.redirect("/login");
   } else {
     const templateVars = {
       user: userDatabase[userID],
@@ -99,19 +99,19 @@ app.get('/urls/:shortURL', (req, res) => {
   const {shortURL} = req.params;
 
   if (!urlDatabase[shortURL]) {
-    res.status(404).send(`${res.statusCode} - This page doesn\'t exist \n`);
+    res.status(404).send(`${res.statusCode} - This page doesn't exist \n`);
   
   } else if (!userID) {
     res.status(401).send(`${res.statusCode} - Please log in to see this page \n`);
 
   } else if (!userURLs[shortURL]) {
-    res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
+    res.status(401).send(`${res.statusCode} - You don't have permission to manipulate this data \n`);
 
   } else {
     const {longURL} = urlDatabase[shortURL];
-    const templateVars = { 
+    const templateVars = {
       longURL,
-      shortURL, 
+      shortURL,
       user: userDatabase[userID],
     };
     res.render("urls_show", templateVars);
@@ -146,7 +146,7 @@ app.post("/register", (req, res) => {
       id: userID,
       password: hashedPassword,
       email,
-    }
+    };
     req.session["user_id"] = userID;
     res.redirect("/urls");
   }
@@ -189,14 +189,14 @@ app.post("/logout", (req, res) => {
 
 /*---------------Edit/Delete existing URL routes ----------------- */
 
-// make possible to edit user's own url 
+// make possible to edit user's own url
 app.post("/urls/:id", (req, res) => {
-  const userID = req.session["user_id"]
+  const userID = req.session["user_id"];
   const userURLs = urlsForUser(userID, urlDatabase);
   const shortURL = req.params.id;
   
   if (!userURLs[shortURL]) {
-    res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
+    res.status(401).send(`${res.statusCode} - You don't have permission to manipulate this data \n`);
   } else {
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
@@ -206,14 +206,14 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
-// make possible to delete user's own url 
+// make possible to delete user's own url
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const userID = req.session["user_id"]
+  const userID = req.session["user_id"];
   const userURLs = urlsForUser(userID, urlDatabase);
   const {shortURL} = req.params;
   
   if (!userURLs[shortURL]) {
-    res.status(401).send(`${res.statusCode} - You don\'t have permission to manipulate this data \n`);
+    res.status(401).send(`${res.statusCode} - You don't have permission to manipulate this data \n`);
   } else {
     delete urlDatabase[shortURL];
     res.redirect('/urls');

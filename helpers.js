@@ -1,7 +1,7 @@
 // generates string to be used as shortURL and userID
 
 const generateRandomString = () => {
-  const chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = '';
   let count = 0;
 
